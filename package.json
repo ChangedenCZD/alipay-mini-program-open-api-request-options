@@ -1,0 +1,27 @@
+{
+  "name": "alipay-mini-program-open-api-request-options",
+  "version": "0.1.0",
+  "description": "基于Java OpenApi服务器开发框架以及alipay-mini-program-request-options包的请求拓展",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "babel src/index.js -o dist/index.js"
+  },
+  "keywords": [
+    "alipay"
+  ],
+  "author": "Changeden",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.1.6",
+    "@babel/preset-env": "^7.1.6",
+    "babel-loader": "^8.0.4",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015": "^6.24.1"
+  },
+  "dependencies": {
+    "dateformat": "^3.0.3",
+    "md5": "^2.2.1",
+    "alipay-mini-program-request-options": "^0.1.1"
+  }
+}
