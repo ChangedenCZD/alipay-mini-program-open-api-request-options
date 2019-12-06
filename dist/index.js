@@ -1,5 +1,7 @@
 'use strict';
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -7,14 +9,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var md5 = require('md5');
 
 var _require = require('alipay-mini-program-request-options'),
-    Options = _require.Options;
+    Options = _require.Options,
+    Methods = _require.Methods;
 
 var dateformat = require('dateformat');
-var DEFAULT_CONFIG = {};
-var getDefaultBody = function getDefaultBody(name, data) {
-  var version = DEFAULT_CONFIG.version,
-      app_key = DEFAULT_CONFIG.app_key,
-      format = DEFAULT_CONFIG.format;
+
+var getDefaultBody = function getDefaultBody(ctx, name, data) {
+  var _ctx$DEFAULT_CONFIG = ctx.DEFAULT_CONFIG,
+      version = _ctx$DEFAULT_CONFIG.version,
+      app_key = _ctx$DEFAULT_CONFIG.app_key,
+      format = _ctx$DEFAULT_CONFIG.format;
 
   var config = {
     version: version,
@@ -30,14 +34,7 @@ var getDefaultBody = function getDefaultBody(name, data) {
   }
   return config;
 };
-var setConfig = function setConfig(config) {
-  if (config) {
-    Object.keys(config).forEach(function (key) {
-      DEFAULT_CONFIG[key] = config[key];
-    });
-  }
-};
-var buildSign = function buildSign(postData, secret) {
+var buildSign = function buildSign(ctx, postData, secret) {
   var paramNames = [];
   for (var key in postData) {
     paramNames.push(key);
@@ -49,21 +46,19 @@ var buildSign = function buildSign(postData, secret) {
     paramNameValue.push(paramName);
     paramNameValue.push(postData[paramName]);
   }
-  var source = secret + paramNameValue.join('') + secret;
-
-  return md5(source).toUpperCase();
+  return md5(secret + paramNameValue.join('') + secret).toUpperCase();
 };
-var genSignature = function genSignature(name, data) {
-  var signBody = getDefaultBody(name, data);
-  signBody.sign = buildSign(signBody, DEFAULT_CONFIG['app_secret']);
+var genSignature = function genSignature(ctx, name, data) {
+  var signBody = getDefaultBody(ctx, name, data);
+  signBody.sign = buildSign(ctx, signBody, ctx.DEFAULT_CONFIG['app_secret']);
   return signBody;
 };
 
 var OpenApiOptions = function () {
-  function OpenApiOptions(name) {
+  function OpenApiOptions(ctx, name) {
     _classCallCheck(this, OpenApiOptions);
 
-    this.url = DEFAULT_CONFIG['url'];
+    this.url = ctx.DEFAULT_CONFIG['url'];
     this.name = name;
     this.method = 'POST';
     this.headers = {};
@@ -86,7 +81,7 @@ var OpenApiOptions = function () {
   }, {
     key: 'setMethod',
     value: function setMethod(method) {
-      this.method = method || DEFAULT_METHOD;
+      this.method = method || Methods['GET'];
       return this;
     }
   }, {
@@ -125,6 +120,33 @@ var OpenApiOptions = function () {
   return OpenApiOptions;
 }();
 
-module.exports = {
-  setConfig: setConfig, OpenApiOptions: OpenApiOptions
-};
+module.exports = function () {
+  function OpenApi(defaultConfig) {
+    _classCallCheck(this, OpenApi);
+
+    this.DEFAULT_CONFIG = {};
+    if ((typeof defaultConfig === 'undefined' ? 'undefined' : _typeof(defaultConfig)) === 'object') {
+      this.setConfig(defaultConfig);
+    }
+  }
+
+  _createClass(OpenApi, [{
+    key: 'setConfig',
+    value: function setConfig(config) {
+      var _this = this;
+
+      if (config) {
+        Object.keys(config).forEach(function (key) {
+          _this.DEFAULT_CONFIG[key] = config[key];
+        });
+      }
+    }
+  }, {
+    key: 'newOptions',
+    value: function newOptions(name) {
+      return new OpenApiOptions(this, name);
+    }
+  }]);
+
+  return OpenApi;
+}();

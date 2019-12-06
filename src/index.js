@@ -1,9 +1,9 @@
 const md5 = require('md5')
-const { Options } = require('alipay-mini-program-request-options')
+const { Options, Methods } = require('alipay-mini-program-request-options')
 const dateformat = require('dateformat')
-const DEFAULT_CONFIG = {}
-const getDefaultBody = (name, data) => {
-  const { version, app_key, format } = DEFAULT_CONFIG
+
+const getDefaultBody = (ctx, name, data) => {
+  const { version, app_key, format } = ctx.DEFAULT_CONFIG
   const config = {
     version,
     app_key,
@@ -18,14 +18,7 @@ const getDefaultBody = (name, data) => {
   }
   return config
 }
-const setConfig = config => {
-  if (config) {
-    Object.keys(config).forEach(key => {
-      DEFAULT_CONFIG[key] = config[key]
-    })
-  }
-}
-const buildSign = (postData, secret) => {
+const buildSign = (ctx, postData, secret) => {
   let paramNames = []
   for (let key in postData) {
     paramNames.push(key)
@@ -37,19 +30,17 @@ const buildSign = (postData, secret) => {
     paramNameValue.push(paramName)
     paramNameValue.push(postData[paramName])
   }
-  let source = secret + paramNameValue.join('') + secret
-
-  return md5(source).toUpperCase()
+  return md5(secret + paramNameValue.join('') + secret).toUpperCase()
 }
-const genSignature = (name, data) => {
-  const signBody = getDefaultBody(name, data)
-  signBody.sign = buildSign(signBody, DEFAULT_CONFIG['app_secret'])
+const genSignature = (ctx, name, data) => {
+  const signBody = getDefaultBody(ctx, name, data)
+  signBody.sign = buildSign(ctx, signBody, ctx.DEFAULT_CONFIG['app_secret'])
   return signBody
 }
 
 class OpenApiOptions {
-  constructor (name) {
-    this.url = DEFAULT_CONFIG['url']
+  constructor (ctx, name) {
+    this.url = ctx.DEFAULT_CONFIG['url']
     this.name = name
     this.method = 'POST'
     this.headers = {}
@@ -68,7 +59,7 @@ class OpenApiOptions {
   }
 
   setMethod (method) {
-    this.method = method || DEFAULT_METHOD
+    this.method = method || Methods['GET']
     return this
   }
 
@@ -99,6 +90,23 @@ class OpenApiOptions {
   }
 }
 
-module.exports = {
-  setConfig, OpenApiOptions
+module.exports = class OpenApi {
+  constructor (defaultConfig) {
+    this.DEFAULT_CONFIG = {}
+    if (typeof defaultConfig === 'object') {
+      this.setConfig(defaultConfig)
+    }
+  }
+
+  setConfig (config) {
+    if (config) {
+      Object.keys(config).forEach(key => {
+        this.DEFAULT_CONFIG[key] = config[key]
+      })
+    }
+  }
+
+  newOptions (name) {
+    return new OpenApiOptions(this, name)
+  }
 }
